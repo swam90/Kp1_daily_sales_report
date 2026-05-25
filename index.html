@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KP1 Report">
+<meta name="theme-color" content="#060e18">
+<title>KP1 Sales Report</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#060e18;--card:#080f1a;--border:#112030;--ibg:#0d1a26;--iborder:#1e3048;--text:#c8daf0;--muted:#4a6080;--sub:#8a9bb0;--accent:#2563eb;--hi:#38bdf8;--green:#22c55e;--red:#f87171;}
+html,body{background:var(--bg);color:var(--text);font-family:'SF Mono','Fira Code','Courier New',monospace;min-height:100vh;overscroll-behavior:none;-webkit-text-size-adjust:100%;}
+body{padding-bottom:90px;}
+.hdr{position:sticky;top:0;z-index:99;background:rgba(6,14,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 16px 8px;text-align:center;}
+.hdr-tag{font-size:9px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;}
+.hdr h1{font-size:19px;font-weight:800;color:#e8f4ff;letter-spacing:-.02em;margin-top:1px;}
+.wrap{padding:14px 14px 6px;max-width:480px;margin:0 auto;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+.sec{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:10px;letter-spacing:.06em;color:var(--sub);text-transform:uppercase;}
+.iwrap{position:relative;}
+.pfx{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;}
+input[type=number],input[type=date],input[type=text]{width:100%;background:var(--ibg);border:1px solid var(--iborder);border-radius:8px;color:var(--text);font-family:inherit;font-size:16px;outline:none;-webkit-appearance:none;transition:border-color .15s;}
+input[type=number]{padding:11px 10px 11px 24px;}
+input[type=date]{padding:11px 10px;}
+input[type=text]{padding:11px 10px;font-size:13px;color:var(--sub);}
+input:focus{border-color:var(--accent);}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+input[type=number]{-moz-appearance:textfield;}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4);}
+input[readonly]{color:var(--hi);border-color:#1a3a5a;background:#091520;}
+.date-row{display:flex;gap:10px;align-items:center;}
+.day-badge{background:#0e2236;border:1px solid #1e3a58;border-radius:8px;padding:11px 12px;color:#60a5fa;font-size:13px;white-space:nowrap;flex-shrink:0;min-width:90px;text-align:center;}
+.cr{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:8px;margin-top:8px;}
+.cr.nm{background:#0a1825;border:1px solid #1a2f45;}
+.cr.hl{background:linear-gradient(135deg,#0e2a4a,#0a1e35);border:1px solid var(--accent);}
+.cr-lbl{font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.cr.nm .cr-lbl{color:#6b8aaa;}
+.cr.hl .cr-lbl{color:#60a5fa;}
+.cr-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.cr-val{font-size:16px;font-weight:700;}
+.cr.nm .cr-val{color:#a8c8e8;}
+.cr.hl .cr-val{color:var(--hi);font-size:19px;}
+.gst-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:8px 12px;background:#070e18;border:1px dashed #152535;border-radius:6px;margin-top:4px;}
+.cat-lbl{font-size:10px;letter-spacing:.06em;color:var(--sub);text-transform:uppercase;margin-bottom:8px;}
+.cat-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cat-num{font-size:12px;color:var(--muted);min-width:20px;}
+.btn-rem{background:none;border:1px solid #2a1a1a;border-radius:6px;color:#7a3030;font-size:18px;width:36px;height:36px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.btn-add{width:100%;background:transparent;border:1px dashed #1e3a58;border-radius:8px;color:#3a6090;font-size:11px;padding:10px;cursor:pointer;font-family:inherit;letter-spacing:.08em;text-transform:uppercase;margin:2px 0 8px;}
+.bal{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:8px;margin-top:6px;}
+.bal.ok{background:#051a10;border:1px solid #0a3a20;}
+.bal.err{background:#1a0808;border:1px solid #3a1010;}
+.bal-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;}
+.bal.ok .bal-lbl,.bal.ok .bal-val{color:var(--green);}
+.bal.err .bal-lbl,.bal.err .bal-val{color:var(--red);}
+.bal-val{font-size:14px;font-weight:700;}
+
+/* Save button */
+.btn-save{width:100%;margin-top:12px;padding:12px;border-radius:10px;border:1px solid #1a5a30;background:linear-gradient(135deg,#0a2e18,#071f10);color:#22c55e;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.08em;cursor:pointer;text-transform:uppercase;transition:all .2s;}
+.btn-save:active{background:linear-gradient(135deg,#14532d,#0d3a20);}
+.btn-save.saved{border-color:#0a3a20;color:#16a34a;background:#051a10;}
+
+/* MTD auto badge */
+.mtd-auto{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#3a6090;letter-spacing:.04em;margin-left:6px;}
+.mtd-auto.live{color:#22c55e;}
+
+/* Month history */
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:6px;font-size:12px;margin-bottom:4px;background:#070e18;border:1px solid #0e1f2e;}
+.hist-row.today{border-color:#1e3a58;background:#080f1a;}
+.hist-date{color:var(--sub);}
+.hist-val{color:#a8c8e8;font-weight:600;}
+.hist-val.today-val{color:var(--hi);}
+
+.bar{position:fixed;bottom:0;left:0;right:0;padding:10px 14px;padding-bottom:calc(10px + env(safe-area-inset-bottom));background:rgba(6,14,24,.97);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--border);display:flex;gap:8px;}
+.btn-wa{flex:2;padding:13px 8px;border-radius:10px;border:none;background:linear-gradient(135deg,#128c3e,#075e2e);color:#fff;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-cp{flex:1;padding:13px 8px;border-radius:10px;border:none;background:linear-gradient(135deg,#1d4ed8,#1e40af);color:#fff;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .2s;}
+.btn-cp.done{background:linear-gradient(135deg,#14532d,#166534);}
+.btn-rs{padding:13px 12px;border-radius:10px;border:1px solid var(--iborder);background:transparent;color:var(--muted);font-family:inherit;font-size:11px;letter-spacing:.04em;cursor:pointer;}
+.btn-pr{padding:13px 12px;border-radius:10px;border:1px solid #1a3a5a;background:linear-gradient(135deg,#0a1e35,#07151f);color:#60a5fa;font-family:inherit;font-size:11px;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.foot{text-align:center;padding:6px;font-size:9px;color:#1e3048;letter-spacing:.1em;}
+.spinner{display:inline-block;width:10px;height:10px;border:2px solid #1e3a58;border-top-color:#60a5fa;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-tag">◆ Daily Report System &nbsp;<span id="cloudStatus" style="font-size:8px;letter-spacing:.06em;" title="Cloud sync status">⏳</span></div>
+  <h1>KP1 Sales Report</h1>
+</div>
+
+<div class="wrap">
+
+  <!-- DATE -->
+  <div class="card">
+    <div class="sec"><span id="calIcon" style="display:inline-flex;flex-direction:column;align-items:center;background:#0e2236;border:1px solid #1e3a58;border-radius:5px;width:28px;height:28px;overflow:hidden;flex-shrink:0;line-height:1"><span id="calMon" style="background:#2563eb;font-size:7px;letter-spacing:.06em;color:#fff;width:100%;text-align:center;padding:2px 0;text-transform:uppercase">MON</span><span id="calDay" style="font-size:12px;font-weight:800;color:#60a5fa;margin-top:1px">—</span></span> <span id="dateLabel">Report Date</span></div>
+    <div class="date-row">
+      <input type="date" id="dateInput" style="flex:1" oninput="onDateChange()" onchange="onDateChange()">
+      <div class="day-badge" id="dayBadge">—</div>
+    </div>
+  </div>
+
+  <!-- RESTAURANT -->
+  <div class="card">
+    <div class="sec"><span>🍽️</span> Restaurant Sales</div>
+    <div class="grid2">
+      <div class="field"><label>Lunch</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="lunch" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>
+      <div class="field"><label>Snacks</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="snacks" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>
+      <div class="field"><label>Dinner</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="dinner" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>
+      <div class="field"><label>Take Away</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="takeaway" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>
+    </div>
+    <div class="cr nm"><div class="cr-lbl">Total Restaurant + Take Away</div><div class="cr-val" id="totRest">$0.00</div></div>
+  </div>
+
+  <!-- DELIVERY & CATERING -->
+  <div class="card">
+    <div class="sec"><span>🛵</span> Delivery & Catering</div>
+    <div class="field" style="margin-bottom:12px"><label>Home Delivery</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="homeDelivery" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>
+    <div class="cat-lbl">Total Catering Sales</div>
+    <div id="catList"></div>
+    <button class="btn-add" onclick="addCat()">+ Add Catering Entry</button>
+    <div id="totCatRow" style="display:none"><div class="cr nm"><div class="cr-lbl">Total Catering</div><div class="cr-val" id="totCat">$0.00</div></div></div>
+  </div>
+
+  <!-- MTD & TOTALS -->
+  <div class="card">
+    <div class="sec"><span>📊</span> MTD & Totals</div>
+
+    <div class="field" style="margin-bottom:10px">
+      <label>Previous MTD <span class="mtd-auto" id="mtdBadge"><span class="spinner"></span></span></label>
+      <div class="iwrap"><span class="pfx">$</span><input type="number" id="prevMTD" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div>
+    </div>
+
+    <div class="cr nm"><div><div class="cr-lbl">Total Sale of Day</div><div class="cr-sub">Restaurant + Delivery + Catering</div></div><div class="cr-val" id="totDay">$0.00</div></div>
+    <div class="cr hl" style="margin-top:6px"><div class="cr-lbl">MTD Sale (incl. 9% GST)</div><div class="cr-val" id="mtdSale">$0.00</div></div>
+    <div class="cr hl" style="margin-top:6px"><div class="cr-lbl">Net Sale (excl. GST)</div><div class="cr-val" id="netSale">$0.00</div></div>
+    <div class="gst-row"><span>GST Amount (9%)</span><span id="gstAmt" style="color:#4a7090">$0.00</span></div>
+
+    <button class="btn-save" id="saveBtn" onclick="saveDay()">💾 Save Today's Total to MTD</button>
+  </div>
+
+  <!-- TENDER -->
+  <div class="card">
+    <div class="sec"><span>💳</span> Tender Breakdown</div>
+    <div class="grid2" id="tenderGrid"></div>
+    <div class="field" id="catTenderRow" style="margin-top:10px;display:none;">
+      <label style="color:#60a5fa;">Catering <span style="font-size:9px;color:#3a6090;letter-spacing:.04em;">● auto</span></label>
+      <div class="iwrap"><span class="pfx">$</span><input type="number" id="t_catering" readonly style="color:var(--hi);border-color:#1a3a5a;background:#091520;width:100%;padding:11px 10px 11px 24px;border-radius:8px;border:1px solid #1a3a5a;font-size:16px;font-family:inherit;outline:none;-webkit-appearance:none;" placeholder="0.00"></div>
+    </div>
+    <div class="cr nm" style="margin-top:6px"><div class="cr-lbl">Total Tender</div><div class="cr-val" id="totTender">$0.00</div></div>
+    <div class="bal ok" id="balRow"><span class="bal-lbl" id="balLbl">✓ Balanced</span><span class="bal-val" id="balVal">—</span></div>
+  </div>
+
+  <!-- MONTH HISTORY -->
+  <div class="card">
+    <div class="sec" style="justify-content:space-between;">
+      <span style="display:flex;align-items:center;gap:7px;"><span>🗓️</span> This Month's History <span id="histMonth" style="margin-left:4px;color:#3a6090;font-size:9px"></span></span>
+      <span style="display:flex;gap:6px;flex-shrink:0;">
+        <button onclick="confirmClearHistory()" style="background:transparent;border:1px solid #3a1010;border-radius:6px;color:#f87171;font-family:inherit;font-size:9px;letter-spacing:.08em;padding:4px 8px;cursor:pointer;text-transform:uppercase;">🗑️ Clear</button>
+      </span>
+    </div>
+    <div id="histList"><div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">No data saved yet for this month.</div></div>
+  </div>
+
+  <div class="foot">KP1 · DAILY SALES AUTOMATION · GST@9%</div>
+</div>
+
+<!-- CLEAR HISTORY MODAL -->
+<div style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;justify-content:center;" id="clearModal" onclick="if(event.target===this)closeClearModal()">
+  <div style="background:#080f1a;border:1px solid #1e3a58;border-radius:16px 16px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:480px;">
+    <div style="font-size:13px;font-weight:800;color:#f87171;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">🗑️ Clear History</div>
+    <div style="font-size:10px;color:#4a6080;margin-bottom:12px;" id="clearModalSub"></div>
+    <div style="background:#1a0808;border:1px solid #3a1010;border-radius:8px;padding:12px;margin-bottom:14px;font-size:11px;color:#f87171;line-height:1.7;">⚠️ This will permanently delete all saved daily totals for this month. This cannot be undone.</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="clearHistory()" style="flex:1;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#7f1d1d,#450a0a);color:#fca5a5;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.06em;cursor:pointer;">🗑️ Delete All</button>
+      <button onclick="closeClearModal()" style="padding:13px 16px;border-radius:10px;border:1px solid #1e3048;background:transparent;color:#4a6080;font-family:inherit;font-size:11px;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- HIDDEN PRINT IFRAME -->
+<iframe id="histPrintFrame" style="display:none;"></iframe>
+
+<div class="bar">
+  <button class="btn-wa" onclick="sendWA()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.856L.057 23.625a.5.5 0 0 0 .612.612l5.769-1.478A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.806 9.806 0 0 1-5.064-1.405l-.363-.217-3.764.964.982-3.648-.237-.375A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+    WhatsApp
+  </button>
+  <button class="btn-cp" id="cpBtn" onclick="copyRpt()">📋 Copy</button>
+  <button class="btn-pr" onclick="openHistPrint()">🖨️</button>
+  <button class="btn-rs" onclick="resetFields()">Reset</button>
+</div>
+
+<script>
+// ── FIREBASE + OFFLINE STORAGE ───────────────────────────────
+function sanitizeKey(k){return k.replace(/[^a-zA-Z0-9_\-]/g,'_');}
+
+// localStorage fallback (always available offline)
+const localStore={
+  async set(k,v){localStorage.setItem(k,v);return{key:k,value:v};},
+  async get(k){const v=localStorage.getItem(k);if(v===null)throw new Error('Key not found');return{key:k,value:v};},
+  async delete(k){localStorage.removeItem(k);return{key:k,deleted:true};},
+  async list(prefix){const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!prefix||k.startsWith(prefix))keys.push(k);}return{keys};}
+};
+
+window.storage = localStore; // start with local, upgrade to cloud
+
+async function initFirebase(){
+  const statusEl = document.getElementById('cloudStatus');
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // Enable offline persistence
+    db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+
+    // Anonymous sign-in
+    await auth.signInAnonymously();
+    const uid = auth.currentUser.uid;
+    const col = db.collection('outlets').doc(OUTLET_ID).collection('reports');
+    
+    // Show device ID for support
+    console.log('Device UID:', uid);
+
+    // Upgrade window.storage to Firestore
+    window.storage = {
+      async set(key, value){
+        const docId = sanitizeKey(key);
+        await col.doc(docId).set({key, value, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
+        localStorage.setItem(key, value); // cache locally
+        return{key, value, shared:false};
+      },
+      async get(key){
+        const docId = sanitizeKey(key);
+        try{
+          const doc = await col.doc(docId).get();
+          if(doc.exists){const v=doc.data().value;localStorage.setItem(key,v);return{key,value:v,shared:false};}
+        }catch(e){}
+        // Fallback to localStorage cache
+        const cached = localStorage.getItem(key);
+        if(cached!==null) return{key,value:cached,shared:false};
+        throw new Error('Key not found: '+key);
+      },
+      async delete(key){
+        const docId = sanitizeKey(key);
+        await col.doc(docId).delete();
+        localStorage.removeItem(key);
+        return{key,deleted:true,shared:false};
+      },
+      async list(prefix){
+        try{
+          const snap = await col.where('key','>=',prefix).where('key','<',prefix+'\uf8ff').get();
+          const keys = snap.docs.map(d=>d.data().key);
+          return{keys,shared:false};
+        }catch(e){
+          return localStore.list(prefix);
+        }
+      }
+    };
+
+    statusEl.textContent='☁️';
+    statusEl.title='Connected to Google Cloud';
+    console.log('Firebase connected ✓');
+
+  }catch(err){
+    document.getElementById('cloudStatus').textContent='📴';
+    document.getElementById('cloudStatus').title='Offline — data saved locally';
+    console.warn('Firebase unavailable, using local storage:', err.message);
+    window.storage = localStore;
+  }
+}
+
+// Register Service Worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// Boot Firebase then init app
+initFirebase().then(()=>{
+  onDateChange();
+});
+
+
+const TF=[{k:'cash',l:'Cash'},{k:'online',l:'Online'},{k:'grab',l:'Grab'},{k:'foodpanda',l:'Food Panda'},{k:'visa',l:'Visa'},{k:'master',l:'Master'},{k:'amex',l:'Amex'},{k:'nets',l:'NETS'},{k:'paynow',l:'PayNow'},{k:'upi',l:'UPI'}];
+let cats=[{id:1,v:'',note:''}];
+
+// Build tender grid
+const tg=document.getElementById('tenderGrid');
+TF.forEach(f=>{tg.innerHTML+=`<div class="field"><label>${f.l}</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="t_${f.k}" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>`;});
+
+// Init date
+const now=new Date();
+document.getElementById('dateInput').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+// onDateChange() called after Firebase init above
+
+function updateDay(){
+  const v=document.getElementById('dateInput').value;
+  if(v){
+    const d=new Date(v+'T00:00:00');
+    document.getElementById('dayBadge').textContent=d.toLocaleDateString('en-US',{weekday:'long'});
+    document.getElementById('dateLabel').textContent=d.toLocaleDateString('en-US',{day:'2-digit',month:'short',year:'numeric'});
+    document.getElementById('calMon').textContent=d.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+    document.getElementById('calDay').textContent=d.getDate();
+  }else{
+    document.getElementById('dayBadge').textContent='—';
+    document.getElementById('dateLabel').textContent='Report Date';
+    document.getElementById('calMon').textContent='MON';
+    document.getElementById('calDay').textContent='—';
+  }
+}
+
+async function onDateChange(){
+  updateDay();
+  await loadPrevMTD();
+  await loadHistory();
+  await checkIfSaved();
+}
+
+// ── STORAGE HELPERS ──────────────────────────────────────────
+async function loadPrevMTD(){
+  const badge=document.getElementById('mtdBadge');
+  badge.innerHTML='<span class="spinner"></span>';
+  const date=document.getElementById('dateInput').value;
+  if(!date){badge.innerHTML='';return;}
+  const [y,m]=date.split('-');
+  const prefix=`daily:${y}-${m}-`;
+  try{
+    const res=await window.storage.list(prefix);
+    let total=0;
+    if(res && res.keys && res.keys.length){
+      for(const key of res.keys){
+        const keyDate=key.replace('daily:','');
+        if(keyDate<date){
+          try{
+            const r=await window.storage.get(key);
+            if(r) total+=parseFloat(r.value)||0;
+          }catch(e){}
+        }
+      }
+    }
+    document.getElementById('prevMTD').value=total>0?total.toFixed(2):'';
+    badge.className='mtd-auto live';
+    badge.textContent=total>0?'● auto-loaded':'● new month';
+    calc();
+  }catch(e){
+    badge.className='mtd-auto';
+    badge.textContent='manual';
+    calc();
+  }
+}
+
+async function saveDay(){
+  const date=document.getElementById('dateInput').value;
+  if(!date)return;
+  const total=getCurrentTotals().totalDay;
+  try{
+    await window.storage.set(`daily:${date}`,String(total));
+    const btn=document.getElementById('saveBtn');
+    btn.textContent='✓ Saved!';
+    btn.classList.add('saved');
+    setTimeout(()=>{btn.textContent='💾 Save Today\'s Total to MTD';btn.classList.remove('saved');},2000);
+    await loadHistory();
+  }catch(e){alert('Could not save. Please try again.');}
+}
+
+async function checkIfSaved(){
+  const date=document.getElementById('dateInput').value;
+  if(!date)return;
+  try{
+    const r=await window.storage.get(`daily:${date}`);
+    const btn=document.getElementById('saveBtn');
+    if(r){btn.textContent=`✓ Already Saved ($${parseFloat(r.value).toFixed(2)}) — Tap to Update`;btn.classList.add('saved');}
+    else{btn.textContent='💾 Save Today\'s Total to MTD';btn.classList.remove('saved');}
+  }catch(e){
+    document.getElementById('saveBtn').classList.remove('saved');
+    document.getElementById('saveBtn').textContent='💾 Save Today\'s Total to MTD';
+  }
+}
+
+async function loadHistory(){
+  const date=document.getElementById('dateInput').value;
+  if(!date)return;
+  const [y,m]=date.split('-');
+  const prefix=`daily:${y}-${m}-`;
+  document.getElementById('histMonth').textContent=new Date(date+'T00:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  try{
+    const res=await window.storage.list(prefix);
+    const el=document.getElementById('histList');
+    if(!res||!res.keys||!res.keys.length){el.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">No data saved yet for this month.</div>';return;}
+    const sorted=[...res.keys].sort();
+    let html='',runMTD=0;
+    for(const key of sorted){
+      try{
+        const r=await window.storage.get(key);
+        const val=parseFloat(r?.value)||0;
+        runMTD+=val;
+        const d=key.replace('daily:','');
+        const dd=d.split('-').reverse().join('/');
+        const isToday=d===date;
+        html+=`<div class="hist-row${isToday?' today':''}">
+          <span class="hist-date">${dd}${isToday?' ◀':'   '}</span>
+          <span style="display:flex;gap:16px;font-size:11px">
+            <span style="color:var(--muted)">Day: <span class="hist-val${isToday?' today-val':''}">$${val.toFixed(2)}</span></span>
+            <span style="color:var(--muted)">MTD: <span class="hist-val${isToday?' today-val':''}">$${runMTD.toFixed(2)}</span></span>
+          </span>
+        </div>`;
+      }catch(e){}
+    }
+    el.innerHTML=html||'<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">No data saved yet.</div>';
+  }catch(e){document.getElementById('histList').innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px">No data saved yet.</div>';}
+}
+
+// ── CALC ─────────────────────────────────────────────────────
+function g(id){return parseFloat(document.getElementById(id)?.value)||0;}
+function gv(v){return parseFloat(v)||0;}
+function fm(v){return '$'+Number(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+
+function getCurrentTotals(){
+  const rest=g('lunch')+g('snacks')+g('dinner')+g('takeaway');
+  const cat=cats.reduce((s,c)=>s+gv(c.v),0);
+  const totalDay=rest+g('homeDelivery')+cat;
+  const mtd=g('prevMTD')+totalDay;
+  const net=mtd/1.09;
+  const tndr=TF.reduce((s,f)=>s+g('t_'+f.k),0)+cat;
+  return{rest,cat,totalDay,mtd,net,tndr};
+}
+
+function calc(){
+  const{rest,cat,totalDay,mtd,net,tndr}=getCurrentTotals();
+  const diff=totalDay-tndr;
+  document.getElementById('totRest').textContent=fm(rest);
+  document.getElementById('totDay').textContent=fm(totalDay);
+  document.getElementById('mtdSale').textContent=fm(mtd);
+  document.getElementById('netSale').textContent=fm(net);
+  document.getElementById('gstAmt').textContent=fm(mtd-net);
+  document.getElementById('totCat').textContent=fm(cat);
+  document.getElementById('totTender').textContent=fm(tndr);
+  document.getElementById('totCatRow').style.display=cat>0?'block':'none';
+  // Sync catering tender field
+  const catTenderRow=document.getElementById('catTenderRow');
+  const catTenderInput=document.getElementById('t_catering');
+  if(cat>0){catTenderRow.style.display='block';catTenderInput.value=cat.toFixed(2);}
+  else{catTenderRow.style.display='none';catTenderInput.value='';}
+  const ok=Math.abs(diff)<0.01;
+  document.getElementById('balRow').className='bal '+(ok?'ok':'err');
+  document.getElementById('balLbl').textContent=ok?'✓ Balanced':diff>0?'⚠ Short':'⚠ Over';
+  document.getElementById('balVal').textContent=ok?'—':fm(Math.abs(diff));
+}
+
+// ── CATERING ─────────────────────────────────────────────────
+function renderCats(){
+  const el=document.getElementById('catList');el.innerHTML='';
+  cats.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='margin-bottom:12px;padding:10px 12px;background:#070e18;border:1px solid #0e1f2e;border-radius:10px;';
+    d.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span class="cat-num">${i+1})</span>
+        <div class="iwrap" style="flex:1"><span class="pfx">$</span>
+          <input type="number" min="0" step="0.01" placeholder="0.00" value="${c.v}"
+            style="width:100%;background:var(--ibg);border:1px solid var(--iborder);border-radius:8px;padding:11px 10px 11px 24px;color:var(--text);font-family:inherit;font-size:16px;outline:none;-webkit-appearance:none;"
+            oninput="cats[${i}].v=this.value;calc()"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--iborder)'">
+        </div>
+        ${cats.length>1?`<button class="btn-rem" onclick="remCat(${c.id})">x</button>`:''}
+      </div>
+      <div>
+        <div style="font-size:10px;letter-spacing:.06em;color:#4a6080;text-transform:uppercase;margin-bottom:4px;">Payment Details</div>
+        <input type="text" placeholder="Bill no, party name, payment mode..." value="${c.note||''}"
+          style="width:100%;background:var(--ibg);border:1px solid var(--iborder);border-radius:8px;padding:10px 12px;color:var(--sub);font-family:inherit;font-size:13px;outline:none;-webkit-appearance:none;"
+          oninput="cats[${i}].note=this.value"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--iborder)'">
+      </div>`;
+    el.appendChild(d);
+  });calc();
+}
+function addCat(){cats.push({id:Date.now(),v:'',note:''});renderCats();}
+function remCat(id){cats=cats.filter(c=>c.id!==id);renderCats();}
+
+// ── REPORT ───────────────────────────────────────────────────
+function getDate(){const v=document.getElementById('dateInput').value;return v?v.split('-').reverse().join('/'):'—';}
+
+function buildRpt(){
+  const vl=v=>'$'+Number(v).toFixed(2);
+  const{rest,cat,totalDay,mtd,net,tndr}=getCurrentTotals();
+  const actCat=cats.filter(c=>gv(c.v)>0);
+  const actTndr=TF.filter(f=>g('t_'+f.k)>0);
+  const L=[
+    `*KP1 Sales Report*`,`🗓️ *${document.getElementById('dateLabel').textContent} — ${document.getElementById('dayBadge').textContent}*`,
+    ``,`*🍽️ Restaurant Sales*`,
+    `Lunch: ${vl(g('lunch'))}`,`Snacks: ${vl(g('snacks'))}`,
+    `Dinner: ${vl(g('dinner'))}`,`Take Away: ${vl(g('takeaway'))}`,
+    `*Total Restaurant + Take Away: ${vl(rest)}*`,
+    ``,`*🛵 Delivery & Catering*`,`Home Delivery: ${vl(g('homeDelivery'))}`,
+  ];
+  if(actCat.length){
+    L.push(`Total Catering Sales:`);
+    actCat.forEach((c,i)=>{
+      L.push(`${i+1}) ${vl(c.v)}`);
+      if(c.note&&c.note.trim()) L.push(`   📝 ${c.note.trim()}`);
+    });
+    L.push(`*Total Catering: ${vl(cat)}*`);
+  }
+  L.push(``,`*📊 Day Summary*`,
+    `Total Sale of Day: *${vl(totalDay)}*`,`Previous MTD: ${vl(g('prevMTD'))}`,
+    `MTD Sale (incl. 9% GST): *${vl(mtd)}*`,`Net Sale (excl. GST): *${vl(net)}*`,`GST Amount: ${vl(mtd-net)}`,
+    ``,`*💳 Tender Breakdown*`,
+    ...(actTndr.length?actTndr.map(f=>`${f.l}: ${vl(g('t_'+f.k))}`):['(no tender entered)']),
+    ...(cat>0?[`Catering: ${vl(cat)}`]:[]),
+    `*Total Tender: ${vl(tndr)}*`
+  );
+  return L.join('\n');
+}
+
+function sendWA(){window.open('https://wa.me/?text='+encodeURIComponent(buildRpt()),'_blank');}
+function copyRpt(){
+  const t=buildRpt(),btn=document.getElementById('cpBtn');
+  const ok=()=>{btn.textContent='✓ Copied!';btn.classList.add('done');setTimeout(()=>{btn.textContent='📋 Copy';btn.classList.remove('done');},2500);};
+  if(navigator.clipboard?.writeText)navigator.clipboard.writeText(t).then(ok).catch(()=>fb(t,ok));else fb(t,ok);
+}
+function fb(t,cb){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a);cb();}
+
+function resetFields(){
+  ['lunch','snacks','dinner','takeaway','homeDelivery','catNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  TF.forEach(f=>{const e=document.getElementById('t_'+f.k);if(e)e.value='';});
+  cats=[{id:1,v:'',note:''}];renderCats();
+  loadPrevMTD();
+}
+
+// ── CLEAR HISTORY ─────────────────────────────────────────────
+function confirmClearHistory(){
+  const date=document.getElementById('dateInput').value;
+  const monthLabel=date?new Date(date+'T00:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}):'this month';
+  document.getElementById('clearModalSub').textContent=`Delete all saved data for ${monthLabel}?`;
+  const m=document.getElementById('clearModal');m.style.display='flex';
+}
+function closeClearModal(){document.getElementById('clearModal').style.display='none';}
+
+async function clearHistory(){
+  const date=document.getElementById('dateInput').value;
+  if(!date){closeClearModal();return;}
+  const [y,m]=date.split('-');
+  const prefix=`daily:${y}-${m}-`;
+  try{
+    const res=await window.storage.list(prefix);
+    if(res&&res.keys&&res.keys.length){
+      for(const key of res.keys){try{await window.storage.delete(key);}catch(e){}}
+    }
+    closeClearModal();
+    await loadHistory();
+    await loadPrevMTD();
+    const btn=document.getElementById('saveBtn');
+    const orig=btn.textContent;
+    btn.textContent='🗑️ History Cleared';btn.classList.add('saved');
+    setTimeout(()=>{btn.textContent=orig;btn.classList.remove('saved');},2500);
+  }catch(e){alert('Could not clear history. Please try again.');}
+}
+
+// ── PRINT HISTORY ─────────────────────────────────────────────
+async function openHistPrint(){
+  const date=document.getElementById('dateInput').value;
+  if(!date)return;
+  const [y,m]=date.split('-');
+  const monthLabel=new Date(date+'T00:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const prefix=`daily:${y}-${m}-`;
+  try{
+    const res=await window.storage.list(prefix);
+    const sorted=res&&res.keys?[...res.keys].sort():[];
+    let rows='',runMTD=0,grandTotal=0,rowNum=0;
+    for(const key of sorted){
+      try{
+        const r=await window.storage.get(key);
+        const val=parseFloat(r?.value)||0;
+        runMTD+=val;grandTotal=runMTD;rowNum++;
+        const d=key.replace('daily:','');
+        const dayName=new Date(d+'T00:00:00').toLocaleDateString('en-US',{weekday:'long'});
+        const dd=d.split('-').reverse().join('/');
+        rows+=`<tr style="${rowNum%2===0?'background:#f5f7fb':''}">
+          <td>${dd}</td><td>${dayName}</td>
+          <td style="text-align:right;">$${val.toFixed(2)}</td>
+          <td style="text-align:right;">$${runMTD.toFixed(2)}</td>
+        </tr>`;
+      }catch(e){}
+    }
+    // Build a printable overlay div and print it
+    const printId='kp1-print-overlay';
+    let existing=document.getElementById(printId);
+    if(existing)existing.remove();
+    const div=document.createElement('div');
+    div.id=printId;
+    div.innerHTML=`
+      <h2 style="font-size:20px;color:#1e3a8a;margin:0 0 2px;">KP1 Sales Report — Monthly History</h2>
+      <p style="font-size:12px;color:#555;margin:0 0 16px;">${monthLabel} · Printed on ${new Date().toLocaleString()}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr>
+          <th style="background:#1e3a8a;color:#fff;padding:10px 12px;text-align:left;font-size:11px;letter-spacing:.06em;">Date</th>
+          <th style="background:#1e3a8a;color:#fff;padding:10px 12px;text-align:left;font-size:11px;letter-spacing:.06em;">Day</th>
+          <th style="background:#1e3a8a;color:#fff;padding:10px 12px;text-align:right;font-size:11px;letter-spacing:.06em;">Daily Sale</th>
+          <th style="background:#1e3a8a;color:#fff;padding:10px 12px;text-align:right;font-size:11px;letter-spacing:.06em;">MTD Running</th>
+        </tr></thead>
+        <tbody>${rows||'<tr><td colspan="4" style="text-align:center;color:#999;padding:20px;">No data saved.</td></tr>'}</tbody>
+        <tfoot><tr>
+          <td colspan="3" style="border-top:2px solid #1e3a8a;font-weight:700;font-size:14px;padding:10px 12px;color:#1e3a8a;">Month Grand Total</td>
+          <td style="border-top:2px solid #1e3a8a;font-weight:800;font-size:17px;padding:10px 12px;text-align:right;color:#1d4ed8;">$${grandTotal.toFixed(2)}</td>
+        </tr></tfoot>
+      </table>
+      <p style="margin-top:20px;font-size:10px;color:#aaa;text-align:center;">KP1 · Daily Sales Automation · GST @ 9%</p>`;
+    document.body.appendChild(div);
+
+    // Inject print-only CSS
+    let styleEl=document.getElementById('kp1-print-style');
+    if(!styleEl){styleEl=document.createElement('style');styleEl.id='kp1-print-style';document.head.appendChild(styleEl);}
+    styleEl.textContent=`@media print{body>*:not(#${printId}){display:none!important;}#${printId}{display:block!important;font-family:Arial,sans-serif;color:#111;padding:20px;}}@media screen{#${printId}{display:none;}}`;
+
+    window.print();
+    // Clean up after print dialog closes
+    setTimeout(()=>{div.remove();styleEl.textContent='';},3000);
+  }catch(e){alert('Could not load history for printing.');}
+}
+
+// PWA manifest served as manifest.json
+
+renderCats();
+</script>
+
+<!-- PWA: register service worker for offline + installability -->
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', function () {
+    fetch('./sw.js', { method: 'HEAD' }).then(function (r) {
+      if (r.ok) {
+        navigator.serviceWorker.register('./sw.js').then(function () {
+          navigator.serviceWorker.addEventListener('controllerchange', function () {
+            window.location.reload();
+          });
+        }).catch(function () {});
+      }
+    }).catch(function () {});
+  });
+}
+// Capture Android install prompt (for an in-app Install button later if desired)
+window._deferredInstall = null;
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  window._deferredInstall = e;
+});
+</script>
+</body>
+</html>
