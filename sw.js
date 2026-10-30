@@ -1,7 +1,7 @@
 // KP1 Sales Report — Service Worker
 // Bump CACHE_VERSION on every deploy so installed clients get fresh files.
 
-const CACHE_VERSION = 'kp1-report-v1';
+const CACHE_VERSION = 'kp1-report-v2';
 
 const APP_SHELL = [
   './',

@@ -127,6 +127,7 @@ input[readonly]{color:var(--hi);border-color:#1a3a5a;background:#091520;}
   <!-- DELIVERY & CATERING -->
   <div class="card">
     <div class="sec"><span>🛵</span> Delivery & Catering</div>
+    <div class="field" style="margin-bottom:12px"><label>Sweet Sales</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="sweetSales" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>
     <div class="field" style="margin-bottom:12px"><label>Home Delivery</label><div class="iwrap"><span class="pfx">$</span><input type="number" id="homeDelivery" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div></div>
     <div class="cat-lbl">Total Catering Sales</div>
     <div id="catList"></div>
@@ -143,7 +144,7 @@ input[readonly]{color:var(--hi);border-color:#1a3a5a;background:#091520;}
       <div class="iwrap"><span class="pfx">$</span><input type="number" id="prevMTD" min="0" step="0.01" placeholder="0.00" oninput="calc()"></div>
     </div>
 
-    <div class="cr nm"><div><div class="cr-lbl">Total Sale of Day</div><div class="cr-sub">Restaurant + Delivery + Catering</div></div><div class="cr-val" id="totDay">$0.00</div></div>
+    <div class="cr nm"><div><div class="cr-lbl">Total Sale of Day</div><div class="cr-sub">Restaurant + Sweets + Delivery + Catering</div></div><div class="cr-val" id="totDay">$0.00</div></div>
     <div class="cr hl" style="margin-top:6px"><div class="cr-lbl">MTD Sale (incl. 9% GST)</div><div class="cr-val" id="mtdSale">$0.00</div></div>
     <div class="cr hl" style="margin-top:6px"><div class="cr-lbl">Net Sale (excl. GST)</div><div class="cr-val" id="netSale">$0.00</div></div>
     <div class="gst-row"><span>GST Amount (9%)</span><span id="gstAmt" style="color:#4a7090">$0.00</span></div>
@@ -431,7 +432,7 @@ function fm(v){return '$'+Number(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,'
 function getCurrentTotals(){
   const rest=g('lunch')+g('snacks')+g('dinner')+g('takeaway');
   const cat=cats.reduce((s,c)=>s+gv(c.v),0);
-  const totalDay=rest+g('homeDelivery')+cat;
+  const totalDay=rest+g('sweetSales')+g('homeDelivery')+cat;
   const mtd=g('prevMTD')+totalDay;
   const net=mtd/1.09;
   const tndr=TF.reduce((s,f)=>s+g('t_'+f.k),0)+cat;
@@ -504,7 +505,7 @@ function buildRpt(){
     `Lunch: ${vl(g('lunch'))}`,`Snacks: ${vl(g('snacks'))}`,
     `Dinner: ${vl(g('dinner'))}`,`Take Away: ${vl(g('takeaway'))}`,
     `*Total Restaurant + Take Away: ${vl(rest)}*`,
-    ``,`*🛵 Delivery & Catering*`,`Home Delivery: ${vl(g('homeDelivery'))}`,
+    ``,`*🛵 Delivery & Catering*`,`Sweet Sales: ${vl(g('sweetSales'))}`,`Home Delivery: ${vl(g('homeDelivery'))}`,
   ];
   if(actCat.length){
     L.push(`Total Catering Sales:`);
@@ -534,7 +535,7 @@ function copyRpt(){
 function fb(t,cb){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();document.execCommand('copy');document.body.removeChild(a);cb();}
 
 function resetFields(){
-  ['lunch','snacks','dinner','takeaway','homeDelivery','catNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['lunch','snacks','dinner','takeaway','sweetSales','homeDelivery','catNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   TF.forEach(f=>{const e=document.getElementById('t_'+f.k);if(e)e.value='';});
   cats=[{id:1,v:'',note:''}];renderCats();
   loadPrevMTD();
